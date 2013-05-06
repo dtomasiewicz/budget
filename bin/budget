@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+require 'optparse'
+require 'logger'
+require 'sqlite3'
+require 'budget'
+
+log = Logger.new $stderr
+log.level = Logger::INFO
+
+# default configs
+cfg = {
+  dbfile: 'budget.db'
+}
+
+# parse CLI options
+OptionParser.new do |opts|
+  opts.banner = 'Usage: migrate.rb [options]'
+  opts.on '-d FILENAME', String, "Name of the SQLite3 database file [#{cfg[:dbfile]}]" do |v|
+    cfg[:target] = v
+  end
+  opts.on '-h', 'Show this help message' do
+    puts opts
+    exit
+  end
+  opts.on
+end.parse!
+
+action = ARGV.shift || 'summary'
+
+Budget::Manager.new(cfg).send action, *ARGV
