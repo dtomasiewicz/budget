@@ -1,30 +1,57 @@
 #!/usr/bin/env ruby
 require 'optparse'
 require 'logger'
-require 'sqlite3'
-require 'budget'
-
-log = Logger.new $stderr
-log.level = Logger::INFO
+require 'sequel'
 
 # default configs
 cfg = {
-  dbfile: 'budget.db'
+  dbfile: 'budget.db',
+  verbose: false
 }
 
 # parse CLI options
 OptionParser.new do |opts|
-  opts.banner = 'Usage: migrate.rb [options]'
+  opts.banner = 'Usage: migrate [options]'
+
   opts.on '-d FILENAME', String, "Name of the SQLite3 database file [#{cfg[:dbfile]}]" do |v|
     cfg[:target] = v
   end
+
+  opts.on '-dev', "Run from local sources (not as a gem)" do |v|
+    $:.unshift File.join(File.dirname(File.dirname(__FILE__)), 'lib')
+  end
+
+  opts.on '-l', "Show verbose logger output and error messages" do |v|
+    cfg[:verbose] = true
+  end
+
   opts.on '-h', 'Show this help message' do
     puts opts
     exit
   end
+
   opts.on
 end.parse!
 
-action = ARGV.shift || 'summary'
+log = Logger.new $stderr
+log.level = cfg[:verbose] ? Logger::DEBUG : Logger::FATAL
 
-Budget::Manager.new(cfg).send action, *ARGV
+begin
+  if ARGV[0] == 'init'
+    base_dir = File.dirname File.dirname(__FILE__)
+    FileUtils.cp File.join(base_dir, 'db', 'budget.db'), cfg[:dbfile]
+  elsif File.exists? cfg[:dbfile]
+    Sequel.connect adapter: :sqlite, database: cfg[:dbfile]
+    require 'budget/manager'
+    Budget::Manager.new.dispatch ARGV
+  else
+    raise "No budget database found; run 'budget init' to create one"
+  end
+rescue Exception => e
+  if cfg[:verbose]
+    trace = e.backtrace.map{|l| "  #{l}"}.join "\n"
+    log.error "#{e.message}\n#{trace}"
+  else
+    $stderr.puts "ERROR: #{e.message}"
+  end
+end

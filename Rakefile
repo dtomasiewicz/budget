@@ -7,8 +7,9 @@ end
 task :install do
   # build initial database
   Dir.chdir 'db' do
-    delete_all 'budget_base.db', 'migrate_version'
-    `migrate -l`
+    File.delete 'budget.db' if File.exists? 'budget.db'
+    `sqlite3 budget.db ""`
+    `sequel -m migrations sqlite://budget.db`
   end
 
   # build gem

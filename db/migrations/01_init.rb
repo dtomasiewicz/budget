@@ -1,45 +1,25 @@
-module FlySouth::Migrations
+Sequel.migration do
+  change do
+    create_table :settings do
+      primary_key :key, :string, auto_increment: false, null: false
+      String :value
+    end
 
-  def init_up
-    execute %Q{
-      CREATE TABLE accounts (
-        id TEXT(10) NOT NULL PRIMARY KEY,
-        note TEXT,
-        currency TEXT(3) NOT NULL,
-        balance INTEGER NOT NULL
-      )}
+    create_table :accounts do
+      primary_key :id, auto_increment: true
+      String :name, null: false, size: 10
+      String :currency, null: false, size: 3
+      Integer :balance, null: false, default: 0
+      String :note
+      index :name, unique: true
+    end
 
-    execute %Q{
-      CREATE TABLE debts (
-        id TEXT(10) NOT NULL PRIMARY KEY,
-        note TEXT,
-        currency TEXT(3) NOT NULL,
-        principal INTEGER NOT NULL
-      )}
-
-    execute %Q{
-      CREATE TABLE debt_payments (
-        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        note TEXT,
-        debt_id TEXT(10) NOT NULL,
-        amount INTEGER NOT NULL,
-        time INTEGER NOT NULL
-      )}
-
-    execute %Q{
-      CREATE TABLE expenses (
-        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        note TEXT,
-        currency TEXT(3) NOT NULL,
-        amount INTEGER NOT NULL
-      )}
+    create_table :transactions do
+      primary_key :id, auto_increment: true
+      foreign_key :account_id, :accounts, null: false
+      Integer :amount, null: false
+      Integer :time, null: false
+      String :note
+    end
   end
-
-  def init_down
-    execute "DROP TABLE expenses",
-            "DROP TABLE debt_payments",
-            "DROP TABLE debts"
-            "DROP TABLE accounts"
-  end
-
 end

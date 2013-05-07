@@ -9,8 +9,9 @@ Gem::Specification.new do |s|
   s.email       = 'me@dtomasiewicz.com'
   s.homepage    = 'http://github.com/dtomasiewicz/budget'
 
-  s.files       = Dir['{bin,lib}/**/*', 'db/budget_base.db', 'README*', 'LICENSE']
+  s.files       = Dir['{bin,lib,db}/**/*', 'README*', 'LICENSE']
   s.executables << 'budget'
+  s.add_dependency 'sequel'
   s.add_dependency 'rake'
   s.add_dependency 'fly_south'
 end
