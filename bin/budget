@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 require 'optparse'
-require 'logger'
 require 'sequel'
 
 base_dir = File.dirname File.dirname(__FILE__)
@@ -29,9 +28,6 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-log = Logger.new $stderr
-log.level = cfg[:verbose] ? Logger::DEBUG : Logger::FATAL
-
 if ARGV[0] == 'init'
   FileUtils.cp File.join(base_dir, 'db', 'budget.db'), cfg[:dbfile]
 elsif File.exists? cfg[:dbfile]
@@ -44,5 +40,5 @@ elsif File.exists? cfg[:dbfile]
     Budget::Manager.dispatch ARGV
   end
 else
-  raise "No budget database found; run 'budget init' to create one"
+  $stderr.puts "No budget database found; run 'budget init' to create one"
 end

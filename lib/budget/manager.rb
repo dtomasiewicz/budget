@@ -30,12 +30,15 @@ module Budget
         if args.length == 0 && cb.subs[:summary]
           cmd << (cb = cb.subs[:summary])
         else
+          recog = args[0] ? "'#{args[0]}' is not recognized. " : ''
           for_cmd = cmd.length > 0 ? " for '#{cmd.map(&:name).join ' '}'" : ''
+
           fmt = "  %-15s%-61s"
-          $stderr.puts "'#{args[0]}' is not recognized. Valid actions#{for_cmd} include:"
+          $stderr.puts "#{recog}Valid actions#{for_cmd} include:"
           cb.subs.values.uniq.each do |cb|
             $stderr.puts fmt % [cb.name, cb.desc]
           end
+          
           return
         end
       end
@@ -45,7 +48,7 @@ module Budget
 
         # ensure there are enough positional arguments after parsing; otherwise show usage
         if args.length < cb.arity
-          puts cb.op
+          $stderr.puts cb.op
         else
           instance_eval do
             cb.block.call *args
