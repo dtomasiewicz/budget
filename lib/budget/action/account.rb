@@ -2,28 +2,34 @@ module Budget
 
   module Action
 
-    def action_account(*args)
-      dispatch args, :account
+    def action_account
+      dispatch
     end
-    alias_method :action_a, :action_account
+    def action_a; switch :action_account; end
 
     def action_account_summary
+      opts
+
       Account.each do |acc|
         puts acc.info
       end
     end
 
-    def action_account_new(name, currency, *note)
-      note = note.length > 0 ? note.join(' ') : nil
+    def action_account_new
+      name, currency, note = opts %w{name currency}, %w{note}
+
+      #note = note.length > 0 ? note.join(' ') : nil
       puts Account.create({
         name: name,
         currency: Currency.const_get(currency.to_sym),
         note: note
       }).info
     end
-    alias_method :action_account_n, :action_account_new
+    def action_account_n; switch :action_account_new; end
 
-    def action_account_correct(name, new_balance)
+    def action_account_correct
+      name, new_balance = opts %w{account_name, new_balance}
+
       if acc = Account.first(name: name)
         amt = acc.curr_parse(new_balance) - acc.balance
         acc.add_transaction amount: amt, note: 'balance correction', time: Time.now.to_i
@@ -32,9 +38,11 @@ module Budget
         raise "invalid account: #{name}"
       end
     end
-    alias_method :action_account_c, :action_account_correct
+    def action_account_c; switch :action_account_correct; end
 
-    def action_account_history(name)
+    def action_account_history
+      name, *_ = opts %w{account_name}
+
       if acc = Account.first(name: name)
         fmt = "%-10s%-21s%-37s%-10s"
         puts fmt % %w{Amount Time Note Balance}
@@ -50,9 +58,11 @@ module Budget
         raise "invalid account: #{name}"
       end
     end
-    alias_method :action_account_h, :action_account_history
+    def action_account_h; switch :action_account_history; end
 
-    def action_account_transfer(fname, tname, amount, exchanged = nil)
+    def action_account_transfer
+      fname, tname, amount, exchanged = opts %w{from_account to_account amount}, %w{exchanged}
+
       from = Account.first name: fname
       to = Account.first name: tname
       if from && to
@@ -77,7 +87,7 @@ module Budget
         raise "invalid account: #{!from ? fname : tname}"
       end
     end
-    alias_method :action_account_t, :action_account_transfer
+    def action_account_t; switch :action_account_transfer; end
 
   end
 

@@ -15,7 +15,7 @@ cfg = {
 OptionParser.new do |opts|
   opts.banner = 'Usage: migrate [options]'
 
-  opts.on '-d FILENAME', String, "Name of the SQLite3 database file [#{cfg[:dbfile]}]" do |v|
+  opts.on '-db FILENAME', String, "Name of the SQLite3 database file [#{cfg[:dbfile]}]" do |v|
     cfg[:target] = v
   end
 
@@ -23,41 +23,26 @@ OptionParser.new do |opts|
     $:.unshift File.join(base_dir, 'lib')
   end
 
-  opts.on '-l', "Show verbose logger output and error messages" do |v|
-    cfg[:verbose] = true
-  end
-
   opts.on '-h', 'Show this help message' do
     puts opts
     exit
   end
-
-  opts.on
 end.parse!
 
 log = Logger.new $stderr
 log.level = cfg[:verbose] ? Logger::DEBUG : Logger::FATAL
 
-begin
-  if ARGV[0] == 'init'
-    FileUtils.cp File.join(base_dir, 'db', 'budget.db'), cfg[:dbfile]
-  elsif File.exists? cfg[:dbfile]
-    if ARGV[0] == 'migrate'
-      mdir = File.join base_dir, 'db', 'migrations'
-      `sequel -m #{mdir} sqlite://i?database=#{cfg[:dbfile]}`
-    else
-      Sequel.connect adapter: :sqlite, database: cfg[:dbfile]
-      require 'budget/manager'
-      Budget::Manager.new.dispatch ARGV
-    end
+if ARGV[0] == 'init'
+  FileUtils.cp File.join(base_dir, 'db', 'budget.db'), cfg[:dbfile]
+elsif File.exists? cfg[:dbfile]
+  if ARGV[0] == 'migrate'
+    mdir = File.join base_dir, 'db', 'migrations'
+    `sequel -m #{mdir} sqlite://i?database=#{cfg[:dbfile]}`
   else
-    raise "No budget database found; run 'budget init' to create one"
+    Sequel.connect adapter: :sqlite, database: cfg[:dbfile]
+    require 'budget/manager'
+    Budget::Manager.new.dispatch ARGV
   end
-rescue Exception => e
-  if cfg[:verbose]
-    trace = e.backtrace.map{|l| "  #{l}"}.join "\n"
-    log.error "#{e.message}\n#{trace}"
-  else
-    $stderr.puts "ERROR: #{e.message}"
-  end
+else
+  raise "No budget database found; run 'budget init' to create one"
 end

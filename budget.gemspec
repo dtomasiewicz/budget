@@ -13,5 +13,4 @@ Gem::Specification.new do |s|
   s.executables << 'budget'
   s.add_dependency 'sequel'
   s.add_dependency 'rake'
-  s.add_dependency 'fly_south'
 end
