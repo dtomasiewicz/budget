@@ -7,7 +7,7 @@ module Budget
 
   end
 
-  Income = Delta.where 'balance >= 0'
-  Expense = Delta.where 'balance < 0'
+  Incomes = Delta.where 'balance >= 0'
+  Expenses = Delta.where 'balance < 0'
 
 end

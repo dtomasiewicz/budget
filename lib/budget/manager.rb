@@ -21,25 +21,42 @@ module Budget
       @shell = false
     end
 
-    def dispatch(args = nil)
-      if args
-        @action = nil
-        @args = args
-      end
-      prefix = "#{@action || 'action'}_"
-      if @args[0] && respond_to?(@action = :"#{prefix}#{@args[0]}", true)
-        @args.shift
-      else
-        @action = :"#{prefix}summary"
-      end
-      send @action
-      @args = @action = nil
+    # Executes a command defined by the given arguments.
+    def dispatch(args)
+      @action = nil
+      @args = args
+      redispatch(shell: 'Start an interactive command session',
+                 account: 'Manage accounts',
+                 income: 'Manage incomes')
     end
 
     private
 
-    def redispatch
-      puts "redispatching #{@args}"
+    # Can be called by actions to recursively dispatch to sub-actions. The
+    # sub-action to dispatch is based on the first argument; if the first
+    # argument is not a valid sub-action, a list of valid actions will be 
+    # shown as specified by the _usage_ hash. If there are no arguments, the 
+    # 'summary' sub-action will be dispatched.
+    def redispatch(usage)
+      prefix = "#{@action || 'action'}_"
+      if @args[0]
+        a = :"#{prefix}#{@args[0]}"
+        if respond_to?(a, true)
+          @args.shift
+        else
+          for_cmd = @action ? " for '#{command}'" : ''
+          fmt = "  %-15s%-61s"
+          $stderr.puts "'#{@args[0]}' is not recognized. Valid actions#{for_cmd} include:"
+          usage.each_pair do |action, desc|
+            $stderr.puts fmt % [action, desc]
+          end
+          exit
+        end
+      else
+        a = :"#{prefix}summary"
+      end
+      send @action = a
+      @args = @action = nil
     end
 
     def report_error(error)
@@ -48,10 +65,10 @@ module Budget
       $stderr.puts msg
     end
 
-    def opts(pargs = nil, opargs = nil, &block)
+    def opts(pargs = nil, oargs = nil, &block)
       usage = "Usage: #{command}"
-      usage += " "+pargs.join(' ') if pargs
-      usage += " "+opargs.map{|oa| "[#{oa}]"}.join(' ') if opargs
+      usage += " "+pargs.map{|pa| "<#{pa}>"}.join(' ') if pargs
+      usage += " "+oargs.map{|oa| "[#{oa}]"}.join(' ') if oargs
 
       op = OptionParser.new
       op.banner = usage
@@ -96,12 +113,13 @@ module Budget
     end
 
     def action_shell
-      @shell = true
       print "> "
       begin
         while cmd = $stdin.gets
           begin
+            @shell = true
             dispatch Shellwords::split(cmd)
+            @shell = false
           rescue CommandExit
           rescue SystemExit, Interrupt
             raise
@@ -113,7 +131,6 @@ module Budget
         end
       rescue Exception; end
       print "\n"
-      @shell = false
     end
     def action_s; switch :action_shell; end
 

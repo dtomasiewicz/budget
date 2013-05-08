@@ -3,7 +3,11 @@ module Budget
   module Action
 
     def action_account
-      dispatch
+      redispatch(summary: "Show a summary of all accounts",
+                 new: "Create a new account",
+                 correct: "Correct an account's balance",
+                 history: "View the transaction history for an account",
+                 transfer: "Transfer money between two accounts")
     end
     def action_a; switch :action_account; end
 
@@ -18,7 +22,6 @@ module Budget
     def action_account_new
       name, currency, note = opts %w{name currency}, %w{note}
 
-      #note = note.length > 0 ? note.join(' ') : nil
       puts Account.create({
         name: name,
         currency: Currency.const_get(currency.to_sym),
