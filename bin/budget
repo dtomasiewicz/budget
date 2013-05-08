@@ -3,6 +3,8 @@ require 'optparse'
 require 'logger'
 require 'sequel'
 
+base_dir = File.dirname File.dirname(__FILE__)
+
 # default configs
 cfg = {
   dbfile: 'budget.db',
@@ -18,7 +20,7 @@ OptionParser.new do |opts|
   end
 
   opts.on '-dev', "Run from local sources (not as a gem)" do |v|
-    $:.unshift File.join(File.dirname(File.dirname(__FILE__)), 'lib')
+    $:.unshift File.join(base_dir, 'lib')
   end
 
   opts.on '-l', "Show verbose logger output and error messages" do |v|
@@ -38,12 +40,16 @@ log.level = cfg[:verbose] ? Logger::DEBUG : Logger::FATAL
 
 begin
   if ARGV[0] == 'init'
-    base_dir = File.dirname File.dirname(__FILE__)
     FileUtils.cp File.join(base_dir, 'db', 'budget.db'), cfg[:dbfile]
   elsif File.exists? cfg[:dbfile]
-    Sequel.connect adapter: :sqlite, database: cfg[:dbfile]
-    require 'budget/manager'
-    Budget::Manager.new.dispatch ARGV
+    if ARGV[0] == 'migrate'
+      mdir = File.join base_dir, 'db', 'migrations'
+      `sequel -m #{mdir} sqlite://i?database=#{cfg[:dbfile]}`
+    else
+      Sequel.connect adapter: :sqlite, database: cfg[:dbfile]
+      require 'budget/manager'
+      Budget::Manager.new.dispatch ARGV
+    end
   else
     raise "No budget database found; run 'budget init' to create one"
   end

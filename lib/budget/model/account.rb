@@ -22,6 +22,10 @@ module Budget
       extend currency
     end
 
+    def balance
+      transactions.map(&:amount).inject 0, :+
+    end
+
   end
 
 end

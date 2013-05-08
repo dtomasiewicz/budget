@@ -9,7 +9,7 @@ module Budget
     def action_shell
       print "> "
       begin
-        while cmd = input.gets
+        while cmd = $stdin.gets
           begin
             dispatch cmd.split(" ")
           rescue SystemExit, Interrupt

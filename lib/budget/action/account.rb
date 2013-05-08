@@ -27,8 +27,6 @@ module Budget
       if acc = Account.first(name: name)
         amt = acc.curr_parse(new_balance) - acc.balance
         acc.add_transaction amount: amt, note: 'balance correction', time: Time.now.to_i
-        acc.balance += amt
-        acc.save
         puts acc.info
       else
         raise "invalid account: #{name}"
@@ -36,7 +34,7 @@ module Budget
     end
     alias_method :action_account_c, :action_account_correct
 
-    def action_account_transactions(name)
+    def action_account_history(name)
       if acc = Account.first(name: name)
         fmt = "%-10s%-21s%-37s%-10s"
         puts fmt % %w{Amount Time Note Balance}
@@ -52,7 +50,34 @@ module Budget
         raise "invalid account: #{name}"
       end
     end
-    alias_method :action_account_t, :action_account_transactions
+    alias_method :action_account_h, :action_account_history
+
+    def action_account_transfer(fname, tname, amount, exchanged = nil)
+      from = Account.first name: fname
+      to = Account.first name: tname
+      if from && to
+        amount = from.curr_parse amount
+        xnote = ''
+        if from.currency != to.currency
+          if exchanged
+            exchanged = to.curr_parse exchanged
+            xnote = " (#{from[:currency]} #{from.curr_format amount})"
+          else
+            raise "account currencies differ; must provide exchanged amount"
+          end
+        else
+          exchanged = amount
+        end
+        time = Time.now.to_i
+        from.add_transaction amount: -amount, note: "transfer to #{tname}", time: time
+        to.add_transaction amount: exchanged, note: "transfer from #{fname}#{xnote}", time: time
+        puts from.info
+        puts to.info
+      else
+        raise "invalid account: #{!from ? fname : tname}"
+      end
+    end
+    alias_method :action_account_t, :action_account_transfer
 
   end
 
