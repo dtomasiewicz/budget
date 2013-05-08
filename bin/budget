@@ -40,8 +40,8 @@ elsif File.exists? cfg[:dbfile]
     `sequel -m #{mdir} sqlite://i?database=#{cfg[:dbfile]}`
   else
     Sequel.connect adapter: :sqlite, database: cfg[:dbfile]
-    require 'budget/manager'
-    Budget::Manager.new.dispatch ARGV
+    require 'budget'
+    Budget::Manager.dispatch ARGV
   end
 else
   raise "No budget database found; run 'budget init' to create one"
