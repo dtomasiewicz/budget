@@ -1,3 +1,7 @@
 require 'budget/model/setting'
+require 'budget/model/currency_field'
 require 'budget/model/account'
 require 'budget/model/transaction'
+require 'budget/model/income'
+require 'budget/model/expense'
+require 'budget/model/month_balance'
